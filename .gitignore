@@ -1,0 +1,31 @@
+# Python and development files
+__pycache__/
+*.py[cod]
+*$py.class
+.idea/
+.vscode/
+*.swp
+*.sublime*
+
+# Virtual environment
+venv/
+.env/
+
+# Environment variables
+.env
+.env.local
+
+# Cache and embeddings
+faq_embeddings_cache.json
+*.cache
+
+# Data files - exclude all except README if needed
+data/*
+!data/README.md
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Streamlit temporary files
+.streamlit/
