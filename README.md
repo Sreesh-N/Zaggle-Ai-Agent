@@ -60,7 +60,7 @@ An intelligent response generator for customer reviews that combines sentiment a
   Ensure columns are named "question" and "answer"
   Note: The data_loader.py loads two types of files for my case so please modify the file based on your requirements
 
-And finally to run the application ```bash streamlit run app.py ``` and you are good to go🎉🎉🎉
+And finally to run the application ```streamlit run app.py ``` and you are good to go🎉🎉🎉
 
 
 Happy Coding
