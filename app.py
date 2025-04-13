@@ -11,7 +11,6 @@ from PIL import Image
 # Load environment variables
 load_dotenv()
 
-# Custom CSS for styling
 def local_css(file_name):
     with open(file_name) as f:
         st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
@@ -29,9 +28,6 @@ if 'faqs_processed' not in st.session_state:
 def load_faq_database():
     """Function to load and process FAQs automatically"""
     openai_api_key = os.getenv("OPENAI_API_KEY")
-    openai.api_key = openai_api_key
-    client = openai
-    print(client.models.list()) 
     if not openai_api_key:
         st.error("OpenAI API key not found in environment variables")
         return False
@@ -60,17 +56,38 @@ def load_faq_database():
         return False
 
 def main():
-    # Load custom CSS
     local_css("styles.css")
-    
-    # Header with logo
-    col1, col2 = st.columns([1, 4])
+    st.markdown("""
+    <style>
+        .header-container {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        .title-text {
+            margin-left: 20px;
+            font-size: 1.8rem;
+            font-weight: 600;
+            color: #2d3436;
+            line-height: 1.2;
+        }
+        img {
+            background-color: transparent !important;
+            mix-blend-mode: multiply;
+        }
+    </style>
+    """, unsafe_allow_html=True)
+
+    # Header with logo and subtitle
+    col1, col2 = st.columns([2, 8])
     with col1:
-        st.image("zaggle_logo.png", width=80)  # Replace with your logo path
+        st.image("zaggle_logo.png", width=180)
     with col2:
-        st.title("Zaggle AI Review Responder")
-    
-    st.markdown("---")
+        st.markdown("""
+        <div class="header-container title-text">
+            <h1 style="margin-left: 40px; font-size: 2rem;">AI Review Responder</h1>
+        </div>
+        """, unsafe_allow_html=True)
     
     # Brand Voice Selector
     brand_voice = st.selectbox(
@@ -87,23 +104,9 @@ def main():
                 st.stop()
     
     # Main content area
-    # Demo Mode Toggle
-    demo_mode = st.checkbox("🎬 Demo Mode (Preload example queries)")
-    
     # Query Input Section
     st.markdown("### ✍️ Review Input")
-    if demo_mode:
-        demo_options = {
-            "Crisis Handling": "My card was hacked! Transactions I didn't make. How do I freeze it? Will I get my money back?",
-            "Feature Discovery": "The Propel rewards are awesome! How do I redeem for flights? Any blackout dates?",
-            "Multi-Question Handling": "How do I update my mobile number? Also what's the customer care email? And can I do this online?",
-            "Policy Clarification": "Why was my fuel transaction declined? I have balance. What's the MCC code for fuel?",
-            "Urgent Support": "My wife's medical emergency transaction failed! Need urgent help!"
-        }
-        selected_demo = st.selectbox("Select demo scenario:", list(demo_options.keys()))
-        user_query = st.text_area("Review text:", value=demo_options[selected_demo])
-    else:
-        user_query = st.text_area("Review text:", placeholder="Type or paste the customer review here...")
+    user_query = st.text_area("Review text:", placeholder="Type or paste the customer review here...")
     
     # Rating Selector with visual cues
     st.markdown("### ⭐ Rating")
@@ -117,51 +120,37 @@ def main():
     cols = st.columns(5)
     for i in range(5):
         with cols[i]:
-            st.markdown(f"{'★ ' if i < rating else '☆'}")
+            st.markdown(f"<span style='margin-right: 10px;'>{'★ ' if i < rating else '☆'}</span>", unsafe_allow_html=True)
     
-    # Generate Response Button - fixed to remove the 'type' parameter
+    # Generate Response Button
     if st.button("Generate Response", key="generate_response"):
-        with st.spinner("Analyzing review and generating response..."):
-            try:
-                # FAQ Matching
-                faq_context = st.session_state.faq_processor.find_similar_faqs(
-                    user_query,
-                    k=3,
-                    threshold=1.8
-                )
-                
-                # Response Generation
-                response = st.session_state.response_gen.generate_response(
-                    user_query,
-                    rating,
-                    faq_context,
-                    brand_voice.lower()
-                )
-                
-                # Display Results
-                st.markdown("---")
-                st.markdown("### 💬 Generated Response")
-                st.markdown(f'<div class="response-box">{response}</div>', unsafe_allow_html=True)
-                
-                # FAQ References (expandable)
-                if faq_context:
-                    with st.expander("🔎 View FAQ References Used"):
-                        for faq in faq_context:
-                            st.markdown(f"**Q:** {faq['question']}")
-                            st.markdown(f"**A:** {faq['answer']}")
-                            st.markdown(f"*Similarity score: {faq['distance']:.2f}*")
-                            st.markdown("---")
-                
-                # Feedback Mechanism (for demo purposes)
-                st.markdown("---")
-                st.markdown("### 📊 Demo Feedback")
-                feedback = st.radio("How accurate was this response?", 
-                                   ["Perfect", "Good", "Needs Improvement"])
-                if st.button("Submit Feedback"):
-                    st.success("Thanks for your feedback!")
+        if not user_query.strip():
+            st.warning("Please enter a review first")
+        else:
+            with st.spinner("Analyzing review and generating response..."):
+                try:
+                    # FAQ Matching
+                    faq_context = st.session_state.faq_processor.find_similar_faqs(
+                        user_query,
+                        k=3,
+                        threshold=1.8
+                    )
                     
-            except Exception as e:
-                st.error(f"⚠️ Error generating response: {str(e)}")
+                    # Response Generation
+                    response = st.session_state.response_gen.generate_response(
+                        user_query,
+                        rating,
+                        faq_context,
+                        brand_voice.lower()
+                    )
+                    
+                    # Display Results
+                    st.markdown("---")
+                    st.markdown("### 💬 Generated Response")
+                    st.markdown(f'<div class="response-box">{response}</div>', unsafe_allow_html=True)
+                    
+                except Exception as e:
+                    st.error(f"⚠️ Error generating response: {str(e)}")
 
 if __name__ == "__main__":
     main()

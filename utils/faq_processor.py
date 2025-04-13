@@ -21,7 +21,7 @@ class FAQProcessor:
         print(f"Loaded {len(self.embedding_cache)} cached embeddings")
         self.rate_limit_delay = 0.2  # 200ms between API calls
         self.last_api_call = 0
-        self.timeout = 10  # seconds for API timeout
+        self.timeout = 10
 
     def _ensure_cache_directory(self):
         """Ensure the cache directory exists"""
@@ -86,12 +86,12 @@ class FAQProcessor:
         try:
             response = self.client.embeddings.create(
                 input=to_process,
-                model="text-embedding-3-small",
+                model="text-embedding-ada-002",
                 timeout=self.timeout
             )
             self.last_api_call = time.time()
             
-            # Store all results
+            # Storing  all results
             for i, embedding in enumerate(response.data):
                 self.embedding_cache[cache_keys[i]] = embedding.embedding
             
@@ -119,7 +119,7 @@ class FAQProcessor:
         try:
             response = self.client.embeddings.create(
                 input=text,
-                model="text-embedding-3-small",
+                model="text-embedding-ada-002",
                 timeout=10  # seconds
             )
             self.last_api_call = time.time()
@@ -131,44 +131,6 @@ class FAQProcessor:
             print(f"Error getting embedding: {e}")
             return None
 
-    # def build_index(self, faqs_df):
-    #     """Build FAISS index with batch processing"""
-    #     if faqs_df is None or len(faqs_df) == 0:
-    #         raise ValueError("No FAQs provided")
-            
-    #     self.faq_data = faqs_df
-    #     embeddings = []
-        
-    #     print(f"Processing {len(faqs_df)} FAQs ({len(self.embedding_cache)} cached)")
-        
-    #     # First pass - try to get all from cache
-    #     cached_count = 0
-    #     for _, row in tqdm(faqs_df.iterrows(), total=len(faqs_df), desc="Checking cache"):
-    #         combined_text = f"{row['question']} {row['answer']}"
-    #         embedding = self.embedding_cache.get(self._get_cache_key(combined_text))
-    #         if embedding:
-    #             embeddings.append(embedding)
-    #             cached_count += 1
-        
-    #     print(f"Found {cached_count} cached embeddings")
-        
-    #     # Second pass - only process uncached items
-    #     if cached_count < len(faqs_df):
-    #         print(f"Processing {len(faqs_df)-cached_count} new embeddings")
-    #         for _, row in tqdm(faqs_df.iterrows(), total=len(faqs_df), desc="Generating embeddings"):
-    #             combined_text = f"{row['question']} {row['answer']}"
-    #             if self._get_cache_key(combined_text) not in self.embedding_cache:
-    #                 embedding = self.embed_text(combined_text)
-    #                 if embedding:
-    #                     embeddings.append(embedding)
-        
-    #     if not embeddings:
-    #         raise ValueError("No valid embeddings generated")
-            
-    #     embeddings = np.array(embeddings).astype('float32')
-    #     self.index = faiss.IndexFlatL2(embeddings.shape[1])
-    #     self.index.add(embeddings)
-    #     print(f"Built index with {len(embeddings)} embeddings")
     def build_index(self, faqs_df, batch_size=50, progress_callback=None):
         """Build index with batch processing and progress tracking"""
         if faqs_df is None or len(faqs_df) == 0:
